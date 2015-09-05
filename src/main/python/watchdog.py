@@ -18,7 +18,7 @@ ret = ""
 
 def pid_thread(pid):
     
-    p = subprocess.Popen(str("strace -p " + pid + " -f -e trace=network -s 10000 -S time").split(), stdout=subprocess.PIPE, stderr=subprocess.STDOUT)
+    p = subprocess.Popen(str("strace -p " + pid + " ").split(), stdout=subprocess.PIPE, stderr=subprocess.STDOUT)
     
     conn = sqlite3.connect('watchdog-'+pid+'.db')
     conn.execute("CREATE TABLE IF NOT EXISTS 'data' (time INT PRIMARY KEY NOT NULL, read INT, sent INT)")    
@@ -28,37 +28,39 @@ def pid_thread(pid):
         conn = sqlite3.connect('watchdog-'+pid+'.db')
         current_time = int(time.time())
         retcode = p.poll() #returns None while subprocess is running
-        txt = p.stdout.read()
+        txt = p.stdout.readline()
+        
+        print txt
         
         read_bytes = 0
         sent_bytes = 0
 
-        temp = re.search("recvmsg(\(.*\)) = [0-9]+", txt)
+        temp = re.search("^recvmsg(\(.*\)) = [0-9]+", txt)
         if temp != None:
             # print temp.group()
             read_bytes  = read_bytes + len(temp.group())
 
-        temp = re.search("recvfrom(\(.*\)) = [0-9]+", txt)
+        temp = re.search("^recvfrom(\(.*\)) = [0-9]+", txt)
         if temp != None:
             # print temp.group()
             read_bytes  = read_bytes + len(temp.group())
 
-        temp = re.search("recv(\(.*\)) = [0-9]+", txt)
+        temp = re.search("^recv(\(.*\)) = [0-9]+", txt)
         if temp != None:
             # print temp.group()
             read_bytes  = read_bytes + len(temp.group())
 
-        temp = re.search("send(\(.*\)) = [0-9]+", txt)
+        temp = re.search("^send(\(.*\)) = [0-9]+", txt)
         if temp != None:
             # print temp.group()
             sent_bytes  = sent_bytes + len(temp.group())
 
-        temp = re.search("sendto(\(.*\)) = [0-9]+", txt)
+        temp = re.search("^sendto(\(.*\)) = [0-9]+", txt)
         if temp != None:
             # print temp.group()
             sent_bytes  = sent_bytes + len(temp.group())
 
-        temp = re.search("sendmsg(\(.*\)) = [0-9]+", txt)
+        temp = re.search("^sendmsg(\(.*\)) = [0-9]+", txt)
         if temp != None:
             # print temp.group()
             sent_bytes  = sent_bytes + len(temp.group())
@@ -67,7 +69,7 @@ def pid_thread(pid):
             break
         
         conn.execute("INSERT INTO 'data' (time,read,sent) VALUES ("+ str(current_time) +", " + str(read_bytes) + ", " + str(sent_bytes) +")")
-
+        print " inserted " + str(current_time) + " " +  str(sent_bytes) + " " + str(read_bytes)
         conn.close()
         sleep(1)
 
@@ -193,7 +195,7 @@ class watchdog:
 
         try:
         
-            server = HTTPServer(('', 8888), myHandler)
+            server = HTTPServer(('', 8998), myHandler)
             print server
             server.serve_forever()
         

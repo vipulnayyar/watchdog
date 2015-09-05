@@ -36,7 +36,7 @@ function get_processes (duration) {
 		for (var i = obj.length - 1; i >= 0; i--) {
 	
 			content += "<tr>";
-			content += "<td>" + obj[i]["pid"]+ "</td>";
+			content += "<td> <a href=\"process/pid\"> " + obj[i]["pid"]+ "</a></td>";
 			content += "<td>" + obj[i]["read"]+ "</td>";
 			content += "<td>" + obj[i]["sent"]+ "</td>";
 			
@@ -46,6 +46,8 @@ function get_processes (duration) {
 			content += "</tr>";
 		};		
 		content +="</tbody></table>";	
+
+		$("#ptable").html(content);
 	});
 
 	
